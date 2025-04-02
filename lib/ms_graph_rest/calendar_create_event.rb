@@ -31,6 +31,7 @@ module MsGraphRest
       attendees:,
       allow_new_time_proposals:,
       user_id: nil,
+      calendar_id: nil,
       all_day: false,
       draft: false,
       show_as: 'busy',
@@ -65,7 +66,16 @@ module MsGraphRest
         attendees: attendees,
       }.compact
 
-      path = user_id ? "users/#{CGI.escape(user_id)}/events" : "me/events"
+      path = case [user_id.present?, calendar_id.present?]
+             when [true, true]
+               "users/#{user_id}/calendars/#{calendar_id}/events"
+             when [false, true]
+               "me/calendars/#{calendar_id}/events"
+             when [true, false]
+               "users/#{user_id}/events"
+             else
+               "me/events"
+             end
 
       Response.new(client.post(path, body))
     end

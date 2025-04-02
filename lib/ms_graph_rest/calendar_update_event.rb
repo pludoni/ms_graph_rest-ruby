@@ -32,6 +32,7 @@ module MsGraphRest
       attendees:,
       allow_new_time_proposals:,
       user_id: nil,
+      calendar_id: nil,
       show_as: 'busy',
       all_day: false,
       draft: false,
@@ -66,7 +67,30 @@ module MsGraphRest
         attendees: attendees,
       }.compact
 
-      path = user_id ? "users/#{CGI.escape(user_id)}/events/#{id}" : "me/events/#{id}"
+      # PATCH /me/events/{id}
+      # PATCH /users/{id | userPrincipalName}/events/{id}
+      # PATCH /groups/{id}/events/{id}
+      #
+      # PATCH /me/calendar/events/{id}
+      # PATCH /users/{id | userPrincipalName}/calendar/events/{id}
+      # PATCH /groups/{id}/calendar/events/{id}
+      #
+      # PATCH /me/calendars/{id}/events/{id}
+      # PATCH /users/{id | userPrincipalName}/calendars/{id}/events/{id}
+      #
+      # PATCH /me/calendarGroups/{id}/calendars/{id}/events/{id}
+      # PATCH /users/{id | userPrincipalName}/calendarGroups/{id}/calendars/{id}/events/{id}
+      path = case [user_id.present?, calendar_id.present?]
+             when [true, true]
+               "users/#{user_id}/calendars/#{calendar_id}/events/#{id}"
+             when [false, true]
+               "me/calendars/#{calendar_id}/events/#{id}"
+             when [true, false]
+               "users/#{user_id}/events/#{id}"
+             else
+               "me/events/#{id}"
+             end
+
 
       Response.new(client.patch(path, body))
     end
