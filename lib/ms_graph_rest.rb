@@ -10,6 +10,7 @@ require_relative 'ms_graph_rest/calendar_get_schedule'
 require_relative 'ms_graph_rest/calendar_groups'
 require_relative 'ms_graph_rest/calendar_view'
 require_relative 'ms_graph_rest/calendars'
+require_relative 'ms_graph_rest/calendar'
 require_relative 'ms_graph_rest/find_event'
 require_relative 'ms_graph_rest/online_meetings'
 
@@ -220,6 +221,10 @@ module MsGraphRest
     # @return MsGraphRest::CalendarCreateEvent
     def calendars
       Calendars.new(client: connection)
+    end
+
+    def calendar
+      Calendar.new(client: connection)
     end
 
     # @return MsGraphRest::Places
