@@ -1,6 +1,6 @@
 # MsGraphRest
 
-[![CircleCI](https://circleci.com/gh/NEXL-LTS/ms_graph_rest-ruby.svg?style=svg)](https://circleci.com/gh/NEXL-LTS/ms_graph_rest-ruby)
+[![CI](https://github.com/pludoni/ms_graph_rest-ruby/actions/workflows/ci.yml/badge.svg)](https://github.com/pludoni/ms_graph_rest-ruby/actions/workflows/ci.yml)
 
 ## Installation
 
