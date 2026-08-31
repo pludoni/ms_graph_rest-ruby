@@ -91,7 +91,6 @@ module MsGraphRest
                "me/events/#{id}"
              end
 
-
       Response.new(client.patch(path, body))
     end
   end

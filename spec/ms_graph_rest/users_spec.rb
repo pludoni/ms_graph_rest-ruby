@@ -221,7 +221,9 @@ module MsGraphRest
       it do
         results = users.select([:id, :display_name]).get
         expect(results.next_get_query).to eq(select: 'id,displayName', skiptoken: "X'40'")
-        users.get(**results.next_get_query)
+
+        next_page = users.select([:id, :display_name]).skiptoken(results.next_get_query[:skiptoken]).get
+        expect(next_page.size).to eq(1)
       end
     end
   end

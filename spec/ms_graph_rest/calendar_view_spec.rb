@@ -3,10 +3,9 @@ require 'spec_helper'
 module MsGraphRest
   RSpec.describe 'CalendarView' do
     let(:client) { MsGraphRest.new_client(access_token: "123") }
-    let(:calendar_view) { client.calendar_view(path) }
+    let(:calendar_view) { client.calendar_view }
 
     describe 'Get default calendar view' do
-      let(:path) { 'me' }
       let(:body) do
         '{
           "value": [
@@ -28,7 +27,7 @@ module MsGraphRest
 
       before do
         params = "endDateTime=2020-01-02T19:00:00-08:00&startDateTime=2020-01-01T19:00:00-08:00"
-        stub_request(:get, "https://graph.microsoft.com/v1.0/me/calendarView?#{params}")
+        stub_request(:get, "https://graph.microsoft.com/v1.0/me/calendar/calendarView?#{params}")
           .to_return(status: 200, body: body, headers: {})
       end
 
@@ -123,9 +122,10 @@ module MsGraphRest
         '
       end
       let(:result) do
-        client.calendar_view('users/123').select([:subject, :body, :body_preview, :organizer, :attendees, :start, :end, :location])
+        client.calendar_view.select([:subject, :body, :body_preview, :organizer, :attendees, :start, :end, :location])
               .get(start_date_time: Time.parse('2020-01-01T19:00:00-08:00'),
-                   end_date_time: Time.parse('2020-01-02T19:00:00-08:00'))
+                   end_date_time: Time.parse('2020-01-02T19:00:00-08:00'),
+                   user_id: '123')
       end
       let(:event) { result.first }
       let(:attendee) { event.attendees.first }
@@ -134,7 +134,7 @@ module MsGraphRest
       before do
         params = "endDateTime=2020-01-02T19:00:00-08:00&startDateTime=2020-01-01T19:00:00-08:00"
         select_param = "subject,body,bodyPreview,organizer,attendees,start,end,location"
-        stub_request(:get, "https://graph.microsoft.com/v1.0/users/123/calendarView?$select=#{select_param}&#{params}")
+        stub_request(:get, "https://graph.microsoft.com/v1.0/users/123/calendar/calendarView?$select=#{select_param}&#{params}")
           .to_return(status: 200, body: body, headers: {})
       end
 
@@ -167,34 +167,35 @@ module MsGraphRest
     end
 
     describe 'Get calendar view with next link' do
-      let(:path) { 'me' }
-      let(:body) do
+      let(:start_date_time) { '2020-01-01T19:00:00-08:00' }
+      let(:end_date_time) { '2020-01-02T19:00:00-08:00' }
+      let(:first_page) do
         params = "endDateTime=2021-01-12T22%3a39%3a15Z&startDateTime=2020-01-12T22%3a39%3a15Z&%24top=10&%24skip=10"
         "{
-          \"@odata.nextLink\": \"https://graph.microsoft.com/v1.0/me/calendarView?#{params}\",
-          \"value\": [ ]
+          \"@odata.nextLink\": \"https://graph.microsoft.com/v1.0/me/calendar/calendarView?#{params}\",
+          \"value\": [ { \"subject\": \"first\" } ]
         }"
       end
+      let(:last_page) { '{ "value": [ { "subject": "second" } ] }' }
 
       before do
-        params = "endDateTime=2020-01-02T19:00:00-08:00&startDateTime=2020-01-01T19:00:00-08:00"
-        stub_request(:get, "https://graph.microsoft.com/v1.0/me/calendarView?#{params}")
-          .to_return(status: 200, body: body, headers: {})
-        params = "$skip=10&$top=10&endDateTime=2021-01-12T22:39:15Z&startDateTime=2020-01-12T22:39:15Z"
-        stub_request(:get, "https://graph.microsoft.com/v1.0/me/calendarView?#{params}")
-          .to_return(status: 200, body: body, headers: {})
+        params = "endDateTime=#{end_date_time}&startDateTime=#{start_date_time}"
+        stub_request(:get, "https://graph.microsoft.com/v1.0/me/calendar/calendarView?#{params}")
+          .to_return(status: 200, body: first_page, headers: {})
+        # each_page carries over $skip/$top from the nextLink; start/end stay those of the original call
+        stub_request(:get, "https://graph.microsoft.com/v1.0/me/calendar/calendarView?$skip=10&$top=10&#{params}")
+          .to_return(status: 200, body: last_page, headers: {})
       end
 
-      it do
-        result = calendar_view.get(start_date_time: '2020-01-01T19:00:00-08:00', end_date_time: '2020-01-02T19:00:00-08:00')
+      it 'exposes the paging parameters of the next link' do
+        result = calendar_view.get(start_date_time: start_date_time, end_date_time: end_date_time)
         expect(result.odata_next_link).to include("skip=10")
-        expect(result.next_get_query).to eq(
-          start_date_time: '2020-01-12T22:39:15Z',
-          end_date_time: '2021-01-12T22:39:15Z',
-          skip: "10",
-          top: "10"
-        )
-        calendar_view.get(**result.next_get_query)
+        expect(result.next_get_query).to eq(skip: "10", top: "10")
+      end
+
+      it 'follows the next link until it is exhausted' do
+        result = calendar_view.all(start_date_time: start_date_time, end_date_time: end_date_time)
+        expect(result.map(&:subject)).to eq(%w[first second])
       end
     end
   end

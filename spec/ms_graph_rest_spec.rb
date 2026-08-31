@@ -1,6 +1,6 @@
 RSpec.describe MsGraphRest do
   it 'has a version number' do
-    expect(MsGraphRest::VERSION).not_to be nil
+    expect(MsGraphRest::VERSION).not_to be_nil
   end
 
   describe MsGraphRest::Client do
@@ -20,7 +20,7 @@ RSpec.describe MsGraphRest do
       subject { described_class.new(access_token: 'access_token').connection }
 
       before {
-        allow(subject.conn).to receive(:get).and_return(OpenStruct.new(body: '{'))
+        allow(subject.conn).to receive(:get).and_return(double(body: '{'))
       }
 
       it 'raises error' do

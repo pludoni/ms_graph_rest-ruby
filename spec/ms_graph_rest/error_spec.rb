@@ -15,28 +15,28 @@ module MsGraphRest
         let(:body) { { "error" => { "code" => "AuthenticationError" } } }
         let(:faraday_error_class) { Faraday::BadRequestError }
 
-        it { expect(MsGraphRest.wrap_request_error(faraday_error)).to be_kind_of(AuthenticationError) }
+        it { expect(MsGraphRest.wrap_request_error(faraday_error)).to be_a(AuthenticationError) }
       end
 
       describe 'UserNotFound' do
         let(:body) { { "error" => { "code" => "AuthenticationError", "message" => "User not found" } } }
         let(:faraday_error_class) { Faraday::ResourceNotFound }
 
-        it { expect(MsGraphRest.wrap_request_error(faraday_error)).to be_kind_of(UserNotFound) }
+        it { expect(MsGraphRest.wrap_request_error(faraday_error)).to be_a(UserNotFound) }
       end
 
       describe 'MailboxNotEnabledError' do
         let(:body) { { "error" => { "code" => "MailboxNotEnabledForRESTAPI" } } }
         let(:faraday_error_class) { Faraday::ResourceNotFound }
 
-        it { expect(MsGraphRest.wrap_request_error(faraday_error)).to be_kind_of(MailboxNotEnabledError) }
+        it { expect(MsGraphRest.wrap_request_error(faraday_error)).to be_a(MailboxNotEnabledError) }
       end
 
       describe 'ResourceNotFound' do
         let(:body) { { "error" => { "code" => "AuthenticationError" } } }
         let(:faraday_error_class) { Faraday::ResourceNotFound }
 
-        it { expect(MsGraphRest.wrap_request_error(faraday_error)).to be_kind_of(ResourceNotFound) }
+        it { expect(MsGraphRest.wrap_request_error(faraday_error)).to be_a(ResourceNotFound) }
       end
 
       describe 'UnauthorizedError' do
@@ -52,7 +52,7 @@ module MsGraphRest
         context 'when Application is over its MailboxConcurrency limit.' do
           let(:body) { { "error" => { "code" => "ApplicationThrottled", "message" => "Application is over its MailboxConcurrency limit." } } }
 
-          it { expect(MsGraphRest.wrap_request_error(faraday_error)).to be_kind_of(MailboxConcurrencyLimitError) }
+          it { expect(MsGraphRest.wrap_request_error(faraday_error)).to be_a(MailboxConcurrencyLimitError) }
         end
 
         context 'when other error' do
@@ -68,13 +68,13 @@ module MsGraphRest
         context 'when Unable to resolve User Id' do
           let(:body) { { "error" => { "code" => "InternalServerError", "message" => "Unable to resolve User Id" } } }
 
-          it { expect(MsGraphRest.wrap_request_error(faraday_error)).to be_kind_of(UnableToResolveUserId) }
+          it { expect(MsGraphRest.wrap_request_error(faraday_error)).to be_a(UnableToResolveUserId) }
         end
 
         context 'when Resource Unhealthy' do
           let(:body) { { "error" => { "code" => "ResourceUnhealthy", "message" => "SystemMemoryProtectionUtilizationMonitor is unhealthy." } } }
 
-          it { expect(MsGraphRest.wrap_request_error(faraday_error)).to be_kind_of(ResourceUnhealthyError) }
+          it { expect(MsGraphRest.wrap_request_error(faraday_error)).to be_a(ResourceUnhealthyError) }
         end
 
         context 'when not Unable to resolve User Id' do

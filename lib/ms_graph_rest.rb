@@ -2,6 +2,12 @@ require 'hashie'
 require 'faraday'
 require 'multi_json'
 
+# camel_snake_struct <= 0.3 pulled these core_ext in transitively
+require 'active_support/core_ext/module/attribute_accessors'
+require 'active_support/core_ext/object/blank'
+require 'active_support/core_ext/object/to_query'
+require 'active_support/core_ext/string/inflections'
+
 require_relative 'ms_graph_rest/version'
 require_relative 'ms_graph_rest/calendar_create_event'
 require_relative 'ms_graph_rest/calendar_update_event'

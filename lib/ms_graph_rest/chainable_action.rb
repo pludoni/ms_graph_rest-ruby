@@ -1,3 +1,5 @@
+require "cgi"
+require "uri"
 require "active_support/core_ext/hash/indifferent_access"
 
 module MsGraphRest
@@ -39,9 +41,9 @@ module MsGraphRest
 
         break if response.odata_next_link.nil?
 
-        parameters = Rack::Utils.parse_nested_query(URI(response.odata_next_link).query)
-        parameters.each do |key, value|
-          query[key] = value
+        parameters = CGI.parse(URI(response.odata_next_link).query)
+        parameters.each do |key, values|
+          query[key] = values.first
         end
       end
     end

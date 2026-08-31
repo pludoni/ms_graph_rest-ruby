@@ -65,7 +65,7 @@ module MsGraphRest
       SaveResponse.new(client.post("subscriptions", options))
     end
 
-    def delete(id)
+    def delete(id) # rubocop:disable Naming/PredicateMethod
       client.delete("subscriptions/#{id.to_str}")
       true
     end

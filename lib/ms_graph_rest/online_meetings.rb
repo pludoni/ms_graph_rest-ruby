@@ -7,7 +7,8 @@ module MsGraphRest
     end
     Response.example('value' => [], "@odata.context" => "", "@odata.nextLink" => "")
 
-    def create(subject:, start_date_time:, end_date_time:, accept_language: "en", participants: nil, user_id: nil, **args)
+    def create(subject:, start_date_time:, end_date_time:, accept_language: "en", participants: nil, user_id: nil,
+               **args)
       start_date_time = start_date_time.iso8601 if start_date_time.respond_to?(:iso8601)
       end_date_time = end_date_time.iso8601 if end_date_time.respond_to?(:iso8601)
 
@@ -26,7 +27,8 @@ module MsGraphRest
 
     # https://docs.microsoft.com/en-us/graph/api/onlinemeeting-update
     def update(
-      id:, subject: nil, start_date_time: nil, end_date_time: nil, participants: nil, user_id: nil, accept_language: nil, **args
+      id:, subject: nil, start_date_time: nil, end_date_time: nil, participants: nil, user_id: nil,
+      accept_language: nil, **args
     )
       start_date_time = start_date_time.iso8601 if start_date_time.respond_to?(:iso8601)
       end_date_time = end_date_time.iso8601 if end_date_time.respond_to?(:iso8601)
