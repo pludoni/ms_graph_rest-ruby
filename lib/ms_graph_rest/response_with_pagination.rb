@@ -1,4 +1,5 @@
 require 'camel_snake_struct'
+require_relative 'query_params'
 
 module MsGraphRest
   class ResponseWithPagination < CamelSnakeStruct
@@ -17,7 +18,7 @@ module MsGraphRest
       return nil unless odata_next_link
 
       uri = URI.parse(odata_next_link)
-      params = CGI.parse(uri.query)
+      params = QueryParams.parse(uri.query)
       {
         skip: params["$skip"]&.first,
         skiptoken: params["$skiptoken"]&.first,

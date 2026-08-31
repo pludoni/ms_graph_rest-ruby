@@ -1,4 +1,5 @@
 require 'camel_snake_struct'
+require_relative 'query_params'
 
 module MsGraphRest
   class Messages
@@ -18,7 +19,7 @@ module MsGraphRest
         return nil unless odata_next_link
 
         uri = URI.parse(odata_next_link)
-        params = CGI.parse(uri.query)
+        params = QueryParams.parse(uri.query)
         { select: params["$select"]&.first,
           skip: params["$skip"]&.first,
           filter: params["$filter"]&.first,

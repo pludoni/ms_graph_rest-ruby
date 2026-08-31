@@ -1,6 +1,7 @@
 require "cgi"
 require "uri"
 require "active_support/core_ext/hash/indifferent_access"
+require_relative "query_params"
 
 module MsGraphRest
   class ChainableAction
@@ -41,7 +42,7 @@ module MsGraphRest
 
         break if response.odata_next_link.nil?
 
-        parameters = CGI.parse(URI(response.odata_next_link).query)
+        parameters = QueryParams.parse(URI(response.odata_next_link).query)
         parameters.each do |key, values|
           query[key] = values.first
         end
