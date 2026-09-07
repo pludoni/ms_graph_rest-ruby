@@ -24,7 +24,10 @@ require_relative 'ms_graph_rest/error'
 require_relative 'ms_graph_rest/find_rooms'
 require_relative 'ms_graph_rest/groups'
 require_relative 'ms_graph_rest/mails'
+require_relative 'ms_graph_rest/contacts'
 require_relative 'ms_graph_rest/messages'
+require_relative 'ms_graph_rest/message'
+require_relative 'ms_graph_rest/messages_delta'
 require_relative 'ms_graph_rest/photos'
 require_relative 'ms_graph_rest/places'
 require_relative 'ms_graph_rest/planner_tasks'
@@ -32,6 +35,8 @@ require_relative 'ms_graph_rest/subscriptions'
 require_relative 'ms_graph_rest/todo_list_tasks'
 require_relative 'ms_graph_rest/todo_lists'
 require_relative 'ms_graph_rest/users'
+require_relative 'ms_graph_rest/event'
+require_relative 'ms_graph_rest/group_members'
 
 class Faraday::FileReadAdapter < Faraday::Adapter
   def self.folder=(val)
@@ -59,7 +64,8 @@ class Faraday::FileReadAdapter < Faraday::Adapter
     data = File.read(filename(method, path, filename))
     save_response(env, 200, data)
   rescue Errno::ENOENT => e
-    save_response(env, 418, { 'error' => e.message })
+    # a real Faraday body is a String, and ClientErrorCreator parses it as JSON
+    save_response(env, 418, MultiJson.dump('error' => e.message))
   end
 
   private
@@ -75,7 +81,7 @@ class Faraday::FileReadAdapter < Faraday::Adapter
   end
 
   def filename(method, path, query)
-    query = "default" if query.blank?
+    query = "default" if query.nil? || query.empty?
     "#{self.class.folder}/#{method}#{path.tr("/", "_")}/#{query}.json"
   end
 end
@@ -108,10 +114,10 @@ module MsGraphRest
       @conn ||= Faraday.new(url: "https://graph.microsoft.com/#{@version}/",
                             headers: { 'Content-Type' => 'application/json' }) do |c|
         c.use Faraday::Response::RaiseError
-        c.authorization :Bearer, access_token
+        c.request :authorization, 'Bearer', access_token
         c.adapter faraday_adapter
-        c.options.timeout = 60 # open/read timeout in seconds
-        c.options.open_timeout = 60 # connection open timeout in seconds
+        c.options.timeout = 120 # open/read timeout in seconds
+        c.options.open_timeout = 120 # connection open timeout in seconds
       end
     end
 
@@ -133,15 +139,21 @@ module MsGraphRest
     def post(path, body, headers: {})
       response = conn.post(path, body.to_json, headers)
       parse_response(response)
+    rescue Faraday::Error => e
+      raise MsGraphRest.wrap_request_error(e)
     end
 
     def patch(path, body, headers: {})
       response = conn.patch(path, body.to_json, headers)
       parse_response(response)
+    rescue Faraday::Error => e
+      raise MsGraphRest.wrap_request_error(e)
     end
 
     def delete(path)
       conn.delete(path)
+    rescue Faraday::Error => e
+      raise MsGraphRest.wrap_request_error(e)
     end
 
     private
@@ -169,6 +181,10 @@ module MsGraphRest
     # @return Users
     def users
       Users.new(client: connection)
+    end
+
+    def contacts(path = 'me')
+      Contacts.new(path, client: connection)
     end
 
     def subscriptions
@@ -242,8 +258,24 @@ module MsGraphRest
       Messages.new(path, client: connection)
     end
 
+    def message(path = 'me')
+      Message.new(path, client: connection)
+    end
+
+    def messages_delta(path = 'me', folder = 'inbox')
+      MessagesDelta.new(path, folder, client: connection)
+    end
+
+    def event(path)
+      Event.new(path, client: connection)
+    end
+
     def groups
       Groups.new(client: connection)
+    end
+
+    def group_members(group_id)
+      GroupMembers.new(client: connection, group_id: group_id)
     end
 
     def planner_tasks(path = 'me/planner/tasks')

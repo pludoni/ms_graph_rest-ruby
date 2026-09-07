@@ -52,8 +52,8 @@ result.each do |user|
   puts user.display_name
 end
 # Get Next Page
-if result.get_next_query
-  next_result = client.users(**result.get_next_query)
+if result.next_get_query
+  next_result = client.users.get(**result.next_get_query)
   next_result.each do |user|
     puts user.display_name
   end
@@ -90,6 +90,82 @@ result.each do |user|
   puts user.sign_in_activity.last_sign_in_date_time
   puts user.sign_in_activity.last_sign_in_request_id
 end
+```
+
+### Personal contact
+
+#### List
+
+Reference : https://learn.microsoft.com/en-us/graph/api/user-list-contacts
+
+```ruby
+# Get all contacts
+result = client.contacts.get
+result.each do |contact|
+  puts contact.id
+  puts contact.given_name
+  puts contact.surname
+  puts contact.title
+  puts contact.department
+  puts contact.office_location
+  puts contact.profession
+  puts contact.home_phones
+  puts contact.mobile_phone
+  puts contact.email_addresses.first&.address
+end
+
+# Get a user account using a sign-in name
+result = client.contacts.filter("emailAddresses/any(a:a/address eq 'j.smith@yahoo.com')")
+                        .select("displayName,id")
+                        .get
+result.each do |user|
+  puts user.display_name
+end
+# Get Next Page
+if result.next_get_query
+  next_result = client.contacts.get(**result.next_get_query)
+  next_result.each do |user|
+    puts user.display_name
+  end
+end
+```
+
+#### Create
+
+Reference : https://learn.microsoft.com/en-us/graph/api/user-post-contacts?view=graph-rest-1.0
+
+```ruby
+# Create a contact
+result = client.contacts.create({ given_name: 'Alex', surname: "Wilber" })
+puts result.id
+puts result.given_name
+puts result.surname
+puts result.title
+puts result.department
+puts result.office_location
+puts result.profession
+puts result.home_phones
+puts result.mobile_phone
+puts result.email_addresses.first&.address
+```
+
+#### Update
+
+Reference : https://learn.microsoft.com/en-us/graph/api/contact-update?view=graph-rest-1.0
+
+```ruby
+# Update a contact
+result = client.contacts.update(id, { given_name: 'Alex', surname: "Wilber" })
+puts result.id
+puts result.given_name
+puts result.surname
+puts result.title
+puts result.department
+puts result.office_location
+puts result.profession
+puts result.home_phones
+puts result.mobile_phone
+puts result.email_addresses.first&.address
 ```
 
 ### Subscriptions
@@ -170,6 +246,87 @@ using $filter and $orderBy on another user's box
   end
 ```
 
+#### Get message
+
+reference https://docs.microsoft.com/en-us/graph/api/message-get?view=graph-rest-1.0&tabs=http
+
+get message of own inbox with default select attributes
+
+```ruby
+  message = client.message.get('[ID HERE]')
+
+  puts message.id
+  puts message.subject
+  puts message.sender.email_address.name
+  puts message.sender.email_address.address
+```
+
+getting a message with $select from another user
+
+```ruby
+  message = client.message("users/person@example.com")
+                  .select([:id, :sender, :subject])
+                  .get('[ID HERE]')
+    
+  puts message.id
+  puts message.subject
+  puts message.sender.email_address.name
+  puts message.sender.email_address.address
+```
+
+getting a message using fullpath
+
+```ruby
+  message = client.message.get("users/person@example.com/messages/idhere")
+    
+  puts message.id
+  puts message.subject
+  puts message.sender.email_address.name
+  puts message.sender.email_address.address
+```
+
+
+#### Delta messages
+
+https://docs.microsoft.com/en-us/graph/api/message-delta?view=graph-rest-1.0&tabs=http
+
+delta messages on own inbox
+
+```ruby
+  result = client.messages_delta('me','inbox').get
+  result.value.each do |message|
+    puts message.id
+    puts message.subject
+    puts message.sender.email_address.name
+    puts message.sender.email_address.address
+    # etc
+  end
+
+  if result.next_get_query
+    next_result = client.messages_delta('me','inbox').get(**result.next_get_query)
+  end
+
+  if result.delta_query
+    PretendStorage.save_for_later(result.delta_query)
+    # ... after saving the delta
+    query = PretendStorage.restore
+    delta_result = client.messages_delta(**query)
+  end
+```
+
+example using select on  another user's box
+
+```ruby
+  result = client.messages_delta("users/person@example.com", 'outbox')
+                 .select([:sender, :to_recipients, :received_date_time, :created_date_time])
+                 .received_after(Date.parse('2021-10-04'))
+                 .order_by('receivedDateTime desc')
+                 .get
+  
+  result.value.each do |message|
+    # etc
+  end
+```
 
 ### Calendar
 
@@ -231,7 +388,51 @@ getting next link query params
   result = client.calendar_view.get(start_date_time: '2020-01-01T19:00:00-08:00', end_date_time: '2020-01-02T19:00:00-08:00')
   puts result.odata_next_link # ...?endDateTime=2021-01-12T22%3a39%3a15Z&startDateTime=2020-01-12T22%3a39%3a15Z&%24top=10&%24skip=10
   puts result.next_get_query # {start_date_time: '2020-01-01T19:00:00-08:00', end_date_time: '2020-01-02T19:00:00-08:00', skip: 10}
-  next_result = client.calendar_view(**result.next_get_query)
+  next_result = client.calendar_view.get(**result.next_get_query)
+```
+
+#### Get event
+
+reference https://learn.microsoft.com/en-us/graph/api/event-get?view=graph-rest-1.0&tabs=http
+
+```ruby
+  event = client.event('me').get('AAMkADI1N2RjMDRhLTk1MjgtNGIyYS1hMTVkLTEwMGU0OWZmMTllNgBGAAAAAAC3Ox_2oD1vT7uXOvj6e7DVBwBsifJx7olQRY2oHt-3enBxAAAAAAENAABsifJx7olQRY2oHt-3enBxAABW5KLQAAA=')
+  puts event.id
+  puts event.odata_etag
+  puts event.subject
+  # ....
+  event.attendees.each do |attendee|
+    puts attendee.type
+    puts attendee.status.response
+    puts attendee.status.time
+    puts attendee.email_address.name
+    puts attendee.email_address.address
+  end
+```
+
+#### Get recurring event instances
+
+reference https://learn.microsoft.com/en-us/graph/api/event-list-instances?view=graph-rest-1.0&tabs=http
+
+```ruby
+  events = client.event('me').get_instances(
+    'AAMkADI1N2RjMDRhLTk1MjgtNGIyYS1hMTVkLTEwMGU0OWZmMTllNgBGAAAAAAC3Ox_2oD1vT7uXOvj6e7DVBwBsifJx7olQRY2oHt-3enBxAAAAAAENAABsifJx7olQRY2oHt-3enBxAABW5KLQAAA=',
+    start_date_time: '2020-01-01T19:00:00-08:00', end_date_time: '2020-01-02T19:00:00-08:00')
+  )
+
+  events.each do |event|
+    puts event.id
+    puts event.odata_etag
+    puts event.subject
+    # ....
+    event.attendees.each do |attendee|
+      puts attendee.type
+      puts attendee.status.response
+      puts attendee.status.time
+      puts attendee.email_address.name
+      puts attendee.email_address.address
+    end
+  end
 ```
 
 ### Groups
@@ -272,7 +473,7 @@ using select and next link query params
     puts group.mail_enabled
   end
 
-  next_result = client.groups(**result.next_get_query)
+  next_result = client.groups.get(**result.next_get_query)
 ```
 
 ### Planner Tasks

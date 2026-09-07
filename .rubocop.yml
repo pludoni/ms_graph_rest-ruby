@@ -3,6 +3,7 @@ plugins:
   - rubocop-rake
 
 AllCops:
+  TargetRubyVersion: 2.5
   NewCops: enable
   Exclude:
     - 'vendor/**/*'
@@ -11,7 +12,7 @@ Style:
   Enabled: false
 
 Bundler/GemFilename:
-  EnforcedStyle: gems.rb
+  EnforcedStyle: Gemfile
 
 Metrics/AbcSize:
   Max: 25
